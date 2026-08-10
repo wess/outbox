@@ -104,6 +104,15 @@ export const startWorker = async (): Promise<Worker> => {
     `[outbox] worker ${workerId} started (concurrency ${concurrency}, transport ${config.transport})`,
   )
 
+  // Delivering straight to MX means most failures come back later as a DSN to
+  // the return path. With no inbound server listening, those are never seen and
+  // the suppression list only ever learns about synchronous rejections.
+  if (config.transport === "smtp" && !config.inbound.enabled) {
+    console.warn(
+      "[outbox] transport is `smtp` but INBOUND_ENABLED is false — bounces sent to the return path will not be processed, so dead addresses will not be suppressed",
+    )
+  }
+
   const process = async (job: Job) => {
     inFlight++
     try {

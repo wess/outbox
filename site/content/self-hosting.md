@@ -140,7 +140,13 @@ TRUSTED_PROXIES=127.0.0.1
 
 ## Receiving mail
 
-Set `INBOUND_ENABLED=true` and enable receiving on the domain. Outbox listens on
+Set `INBOUND_ENABLED=true` and enable receiving on the domain.
+
+> The inbound server is also what processes **bounces**, and that does not need
+> receiving enabled on the domain — see [Handle
+> bounces](/tutorials/handle-bounces). On the `smtp` transport, running without
+> it means asynchronous bounces are never seen and dead addresses are never
+> suppressed. Outbox listens on
 `INBOUND_PORT` (2525 by default) so it need not run as root; forward port 25 to it:
 
 ```sh

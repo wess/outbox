@@ -57,6 +57,10 @@ exponential-backoff retries.
 **Receiving** — an inbound SMTP server that parses MIME, stores attachments, and
 fires `email.received`.
 
+**Bounce handling** — DSN and ARF reports arriving at the VERP return path are
+parsed, attributed to the message that caused them, classified hard or soft, and
+fed into the suppression list. Works without enabling inbound mail.
+
 **Accounts** — the first account on an instance is its owner; later signups get
 their own team. Sessions are cookie-based and revocable.
 

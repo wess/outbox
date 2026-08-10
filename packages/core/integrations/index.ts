@@ -2,7 +2,7 @@ import { type Integration, integrations } from "@outbox/schema"
 import { from } from "@wess/atlas/db"
 import { decodeConnection, INKLING_PREFIX, type ServiceConnection } from "../connect/index.ts"
 import { allColumns, db } from "../db/index.ts"
-import { invalidParameter, notFound } from "../errors/index.ts"
+import { notFound } from "../errors/index.ts"
 import { createInklingClient, type InklingClient } from "../inkling/index.ts"
 
 export const PROVIDERS = ["inkling"] as const

@@ -11,7 +11,7 @@ import {
   Modal,
   PageHead,
 } from "../components/index.tsx"
-import { del, type List, patch, post } from "../lib/api.ts"
+import { del, type List, post } from "../lib/api.ts"
 import { useResource, useToast } from "../lib/hooks.ts"
 
 type Integration = {
@@ -47,7 +47,7 @@ const PROVIDERS = [
   },
 ] as const
 
-const InklingBrowser = ({ integration }: { integration: Integration }) => {
+const InklingBrowser = () => {
   const types = useResource<List<ContentType>>("/integrations/inkling/types")
   const [type, setType] = useState<string>("")
   const active = type || types.data?.data[0]?.name || ""
@@ -296,9 +296,7 @@ export const IntegrationsPage = () => {
             )
           })}
 
-          {connected.has("inkling") ? (
-            <InklingBrowser integration={connected.get("inkling")!} />
-          ) : null}
+          {connected.has("inkling") ? <InklingBrowser /> : null}
 
           <Card pad>
             <h2>Connecting this Outbox to another service</h2>

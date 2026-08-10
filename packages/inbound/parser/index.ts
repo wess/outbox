@@ -58,7 +58,7 @@ export const decodeQuotedPrintable = (input: string): Buffer => {
   return Buffer.from(bytes)
 }
 
-const splitHeaders = (raw: string): { head: string; body: string } => {
+export const splitHeaders = (raw: string): { head: string; body: string } => {
   const normalized = raw.replace(/\r?\n/g, CRLF)
   const idx = normalized.indexOf(`${CRLF}${CRLF}`)
   if (idx === -1) return { head: normalized, body: "" }
@@ -85,12 +85,12 @@ export const parseHeaders = (head: string): Record<string, string> => {
   return out
 }
 
-const paramOf = (value: string, key: string): string | null => {
+export const paramOf = (value: string, key: string): string | null => {
   const match = value.match(new RegExp(`${key}\\s*=\\s*"([^"]*)"|${key}\\s*=\\s*([^;\\s]+)`, "i"))
   return match ? (match[1] ?? match[2] ?? null) : null
 }
 
-const decodeBody = (body: string, encoding: string, charset: string): Buffer => {
+export const decodeBody = (body: string, encoding: string, charset: string): Buffer => {
   const enc = encoding.toLowerCase()
   if (enc === "base64") return Buffer.from(body.replace(/\s+/g, ""), "base64")
   if (enc === "quoted-printable") return decodeQuotedPrintable(body)
@@ -105,9 +105,9 @@ const asText = (buffer: Buffer, charset: string): string => {
   }
 }
 
-type Part = { headers: Record<string, string>; body: string }
+export type Part = { headers: Record<string, string>; body: string }
 
-const splitParts = (body: string, boundary: string): Part[] => {
+export const splitParts = (body: string, boundary: string): Part[] => {
   const marker = `--${boundary}`
   const segments = body.split(marker)
   const parts: Part[] = []

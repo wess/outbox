@@ -33,7 +33,8 @@
     "test:e2e": "bun run packages/worker/test/e2e.ts",
     "test:compat": "bun run packages/sdk/test/compat.ts",
     "docs:build": "bun run site/build.ts",
-    "docs:serve": "bun run site/serve.ts"
+    "docs:serve": "bun run site/serve.ts",
+    "test:bounce": "bun run packages/inbound/test/bounce.ts"
   },
   "dependencies": {
     "@wess/atlas": "github:wess/atlas",

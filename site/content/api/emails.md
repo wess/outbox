@@ -143,6 +143,10 @@ GET /emails/:id
 Terminal states never regress — an open arriving after a bounce leaves the bounce in
 place.
 
+`bounced`, `complained`, and `delivery_delayed` are usually set *after* delivery, from
+a report that arrives at the return path minutes or days later. See [Handle
+bounces](/tutorials/handle-bounces).
+
 ## List emails
 
 ```

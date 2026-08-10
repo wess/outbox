@@ -1,5 +1,5 @@
 import { config } from "@outbox/config"
-import { dispatch, domainOf, normalizeEmail } from "@outbox/core"
+import { dispatch, domainOf, normalizeEmail, recordBounce } from "@outbox/core"
 import { allColumns, db } from "@outbox/core/db"
 import {
   type Domain,
@@ -10,6 +10,7 @@ import {
 } from "@outbox/schema"
 import { from } from "@wess/atlas/db"
 import { parseMessage } from "./parser/index.ts"
+import { parseBounceAddress, parseReport, verdicts } from "./reports/index.ts"
 
 export * from "./parser/index.ts"
 
@@ -102,15 +103,90 @@ export const storeReceived = async (input: {
   return row
 }
 
-// Only accept mail for a domain a team has enabled receiving on.
-const routeRecipient = async (
-  address: string,
-): Promise<{ teamId: string; domainId: string } | null> => {
+export type Route =
+  | { kind: "inbox"; teamId: string; domainId: string }
+  | { kind: "bounce"; teamId: string; domainId: string; emailId: string | null }
+
+/**
+ * Bounce addresses are `bounces+<email id>@<return path>.<domain>` — a
+ * subdomain of the sending domain, which never matches a domain row directly.
+ * They are accepted regardless of the `receiving` flag: you should not have to
+ * turn on inbound mail to find out that your sends are failing.
+ */
+const routeBounce = async (address: string): Promise<Route | null> => {
+  const parsed = parseBounceAddress(address)
+  if (!parsed) return null
+
+  const domain = await db().one<Domain>(
+    from(domains).where((q) => [
+      q("name").equals(parsed.domain),
+      q("custom_return_path").equals(parsed.returnPath),
+    ]),
+  )
+  if (!domain) return null
+
+  return { kind: "bounce", teamId: domain.team_id, domainId: domain.id, emailId: parsed.emailId }
+}
+
+// Ordinary inbound mail needs the domain to have receiving enabled.
+const routeInbox = async (address: string): Promise<Route | null> => {
   const host = domainOf(address)
   const domain = await db().one<Domain>(
     from(domains).where((q) => [q("name").equals(host), q("receiving").equals("enabled")]),
   )
-  return domain ? { teamId: domain.team_id, domainId: domain.id } : null
+  return domain ? { kind: "inbox", teamId: domain.team_id, domainId: domain.id } : null
+}
+
+const routeRecipient = async (address: string): Promise<Route | null> =>
+  (await routeBounce(address)) ?? (await routeInbox(address))
+
+/**
+ * Parses a message that arrived at a bounce address and applies what it says.
+ *
+ * Arrival is itself evidence of failure, so an unparseable report still counts:
+ * it is recorded as a soft bounce rather than discarded, because "something
+ * went wrong and we cannot tell what" should not silently look like success.
+ */
+export const handleBounce = async (
+  teamId: string,
+  emailId: string | null,
+  raw: string,
+): Promise<void> => {
+  const report = parseReport(raw)
+
+  if (!report) {
+    const outcome = await recordBounce({
+      teamId,
+      emailId,
+      severity: "soft",
+      detail: "Delivery report in an unrecognised format",
+    })
+    console.log(`[outbox] bounce (unparsed) — ${outcome.reason}`)
+    return
+  }
+
+  // Both report kinds carry the original Message-ID; only the name of the
+  // field that identifies the reporter differs.
+  const messageId = report.originalMessageId
+  const reportingMta = report.kind === "dsn" ? report.reportingMta : report.reportedBy
+
+  for (const verdict of verdicts(report)) {
+    const outcome = await recordBounce({
+      teamId,
+      emailId,
+      messageId,
+      recipient: verdict.recipient,
+      severity: verdict.severity,
+      status: verdict.status,
+      detail: verdict.detail,
+      reportingMta,
+    })
+    console.log(
+      `[outbox] ${report.kind} ${verdict.severity}${
+        outcome.recipient ? ` for ${outcome.recipient}` : ""
+      } — ${outcome.reason}`,
+    )
+  }
 }
 
 export type InboundServer = { stop: () => void; port: number }
@@ -154,6 +230,15 @@ export const startInbound = async (port = config.inbound.port): Promise<InboundS
             for (const rcpt of state.recipients) {
               const route = await routeRecipient(rcpt)
               if (!route) continue
+
+              // A bounce is a report about a message we sent, not mail for a
+              // person — processing it and filing it in someone's inbox are
+              // different things.
+              if (route.kind === "bounce") {
+                await handleBounce(route.teamId, route.emailId, raw)
+                continue
+              }
+
               const entry = byTeam.get(route.teamId) ?? { domainId: route.domainId, recipients: [] }
               entry.recipients.push(rcpt)
               byTeam.set(route.teamId, entry)

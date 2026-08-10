@@ -1,5 +1,6 @@
 export * from "./addresses/index.ts"
 export * from "./auth/index.ts"
+export * from "./bounces/index.ts"
 export * from "./connect/index.ts"
 export * from "./db/index.ts"
 export * from "./dkim/index.ts"
