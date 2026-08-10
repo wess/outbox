@@ -8,6 +8,8 @@ any Resend SDK at your Outbox host and it works unchanged.
 
 Built on [Atlas](https://github.com/wess/atlas) and PostgreSQL. MIT licensed.
 
+**[Documentation](https://wess.github.io/outbox)** · [Quickstart](https://wess.github.io/outbox/quickstart) · [API reference](https://wess.github.io/outbox/api/introduction) · [Migrate from Resend](https://wess.github.io/outbox/tutorials/migrate-from-resend) · [llms.txt](https://wess.github.io/outbox/llms.txt)
+
 ```ts
 import { Resend } from "resend"
 
@@ -286,6 +288,27 @@ against Outbox with nothing changed but the base URL, which is what makes the
 compatibility claim above checkable rather than aspirational.
 
 ---
+
+## Documentation
+
+The full docs live at **[wess.github.io/outbox](https://wess.github.io/outbox)** — API
+reference for every endpoint, nine tutorials, and self-hosting guidance.
+
+The source is markdown under `site/content/`, built by a small generator:
+
+```sh
+bun run docs:build     # renders site/content -> site/public
+bun run docs:serve     # preview on :4321
+```
+
+`.github/workflows/pages.yml` builds and deploys it on every push to `main` that touches
+`site/`. Set the repository's **Settings → Pages → Source** to **GitHub Actions** for
+that to run. If you would rather serve from a branch, `./site/publish.sh` pushes the
+build to `gh-pages` instead.
+
+The site also emits [`llms.txt`](https://wess.github.io/outbox/llms.txt) and
+`llms-full.txt`, and serves every page's raw markdown at `<url>.md`, so an agent can read
+the docs without scraping HTML.
 
 ## License
 

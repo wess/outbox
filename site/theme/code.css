@@ -1,0 +1,124 @@
+/* Syntax highlighting. Tuned to the site palette rather than a stock theme, and
+   readable in both colour schemes. */
+.hljs {
+  color: #d6d6dd;
+  background: transparent;
+}
+
+.hljs-comment,
+.hljs-quote {
+  color: #6a6a76;
+  font-style: italic;
+}
+
+.hljs-keyword,
+.hljs-selector-tag,
+.hljs-literal,
+.hljs-type {
+  color: #c084fc;
+}
+
+.hljs-string,
+.hljs-regexp,
+.hljs-addition,
+.hljs-attribute,
+.hljs-meta .hljs-string {
+  color: #9ae6a0;
+}
+
+.hljs-number,
+.hljs-variable,
+.hljs-template-variable,
+.hljs-selector-attr,
+.hljs-selector-pseudo {
+  color: #fbbf24;
+}
+
+.hljs-title,
+.hljs-title.class_,
+.hljs-title.function_,
+.hljs-section,
+.hljs-name {
+  color: #7dd3fc;
+}
+
+.hljs-attr,
+.hljs-property,
+.hljs-selector-class,
+.hljs-selector-id {
+  color: #f0abfc;
+}
+
+.hljs-built_in,
+.hljs-symbol,
+.hljs-bullet,
+.hljs-link {
+  color: #67e8f9;
+}
+
+.hljs-meta,
+.hljs-doctag {
+  color: #94a3b8;
+}
+
+.hljs-deletion {
+  color: #f87171;
+}
+
+.hljs-emphasis {
+  font-style: italic;
+}
+
+.hljs-strong {
+  font-weight: 700;
+}
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) .hljs {
+    color: #24292f;
+  }
+
+  :root:not([data-theme="dark"]) .hljs-comment,
+  :root:not([data-theme="dark"]) .hljs-quote {
+    color: #6e7781;
+  }
+
+  :root:not([data-theme="dark"]) .hljs-keyword,
+  :root:not([data-theme="dark"]) .hljs-selector-tag,
+  :root:not([data-theme="dark"]) .hljs-literal,
+  :root:not([data-theme="dark"]) .hljs-type {
+    color: #8250df;
+  }
+
+  :root:not([data-theme="dark"]) .hljs-string,
+  :root:not([data-theme="dark"]) .hljs-regexp,
+  :root:not([data-theme="dark"]) .hljs-addition,
+  :root:not([data-theme="dark"]) .hljs-attribute {
+    color: #0a7d33;
+  }
+
+  :root:not([data-theme="dark"]) .hljs-number,
+  :root:not([data-theme="dark"]) .hljs-variable,
+  :root:not([data-theme="dark"]) .hljs-template-variable {
+    color: #953800;
+  }
+
+  :root:not([data-theme="dark"]) .hljs-title,
+  :root:not([data-theme="dark"]) .hljs-title.class_,
+  :root:not([data-theme="dark"]) .hljs-title.function_,
+  :root:not([data-theme="dark"]) .hljs-section,
+  :root:not([data-theme="dark"]) .hljs-name {
+    color: #0550ae;
+  }
+
+  :root:not([data-theme="dark"]) .hljs-attr,
+  :root:not([data-theme="dark"]) .hljs-property,
+  :root:not([data-theme="dark"]) .hljs-selector-class {
+    color: #a21caf;
+  }
+
+  :root:not([data-theme="dark"]) .hljs-built_in,
+  :root:not([data-theme="dark"]) .hljs-symbol {
+    color: #0e7490;
+  }
+}

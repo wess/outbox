@@ -31,7 +31,9 @@
     "typecheck": "bunx tsc --noEmit",
     "test:smoke": "bun run packages/api/test/smoke.ts",
     "test:e2e": "bun run packages/worker/test/e2e.ts",
-    "test:compat": "bun run packages/sdk/test/compat.ts"
+    "test:compat": "bun run packages/sdk/test/compat.ts",
+    "docs:build": "bun run site/build.ts",
+    "docs:serve": "bun run site/serve.ts"
   },
   "dependencies": {
     "@wess/atlas": "github:wess/atlas",
@@ -45,7 +47,9 @@
     "@types/bun": "^1.3.14",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
-    "typescript": "^5.9.0",
-    "resend": "^6.18.0"
+    "highlight.js": "^11.11.1",
+    "marked": "^18.0.9",
+    "resend": "^6.18.0",
+    "typescript": "^5.9.0"
   }
 }

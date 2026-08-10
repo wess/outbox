@@ -92,3 +92,6 @@ Package.resolved
 **/Package.resolved
 .gradle/
 **/.gradle/
+
+# generated docs site
+site/public
