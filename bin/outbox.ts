@@ -24,7 +24,8 @@ Usage: bun run bin/outbox.ts <command>
   api                Start the HTTP API and dashboard
   worker             Start the background worker (sending, webhooks, automations)
   inbound            Start the inbound SMTP server
-  dev                Run api + worker together
+  start              Run api + worker + inbound in one process
+  dev                Same as start (the name used while developing)
 
   migrate up         Apply pending migrations
   migrate down       Roll back the most recent migration
@@ -218,6 +219,15 @@ const main = async () => {
       await startInbound()
       return
     }
+    // One process running everything is the right shape for a single box, and
+    // the shape a container wants. `dev` is the same thing under the name it
+    // has always had; `start` exists so a production entrypoint does not have
+    // to be called "dev".
+    //
+    // Migrations deliberately do NOT run here. Applying them from the serving
+    // process means two instances race each other on the way up, and it is the
+    // one step worth being able to run — and fail — on its own.
+    case "start":
     case "dev": {
       const [{ startApi }, { startWorker }] = await Promise.all([
         import("@outbox/api"),

@@ -35,7 +35,8 @@
     "docs:build": "bun run site/build.ts",
     "docs:serve": "bun run site/serve.ts",
     "test:bounce": "bun run packages/inbound/test/bounce.ts",
-    "test:spaces": "bun run packages/core/test/spaces.ts"
+    "test:spaces": "bun run packages/core/test/spaces.ts",
+    "test:starttls": "bun run packages/delivery/test/starttls.ts"
   },
   "dependencies": {
     "@wess/atlas": "github:wess/atlas",

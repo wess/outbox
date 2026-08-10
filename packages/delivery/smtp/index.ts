@@ -82,22 +82,42 @@ export const connectSmtp = async (opts: SmtpOptions): Promise<SmtpSession> => {
     w.resolve(reply)
   }
 
+  // Set once the connection has been upgraded to TLS. Bun leaves the original
+  // handlers attached to the underlying socket, so without this the same `data`
+  // callback receives raw ciphertext alongside the decrypted stream and the
+  // reply parser sees garbage. Everything after the upgrade arrives on the TLS
+  // handlers below instead.
+  let upgraded = false
+
+  const onData = (data: Buffer) => {
+    buffer += data.toString("utf8")
+    settle()
+  }
+  const onError = (error: Error) => {
+    failure = error
+    waiter?.reject(error)
+    waiter = null
+  }
+  const onClose = () => {
+    closed = true
+    if (waiter) {
+      waiter.reject(failure ?? new Error("SMTP connection closed unexpectedly"))
+      waiter = null
+    }
+  }
+
   const handlers = {
     data(_s: Socket<undefined>, data: Buffer) {
-      buffer += data.toString("utf8")
-      settle()
+      if (upgraded) return
+      onData(data)
     },
     error(_s: Socket<undefined>, error: Error) {
-      failure = error
-      waiter?.reject(error)
-      waiter = null
+      if (upgraded) return
+      onError(error)
     },
     close() {
-      closed = true
-      if (waiter) {
-        waiter.reject(failure ?? new Error("SMTP connection closed unexpectedly"))
-        waiter = null
-      }
+      if (upgraded) return
+      onClose()
     },
     // Bun requires these to be present.
     open() {},
@@ -163,10 +183,43 @@ export const connectSmtp = async (opts: SmtpOptions): Promise<SmtpSession> => {
       throw new SmtpError("Server does not advertise STARTTLS", 0)
     }
     await command("STARTTLS", [220])
+
+    let handshakeDone: () => void
+    const handshaken = new Promise<void>((resolve) => {
+      handshakeDone = resolve
+    })
+
+    upgraded = true
     socket = socket.upgradeTLS({
       tls: { rejectUnauthorized: opts.rejectUnauthorized ?? true, serverName: opts.host },
-      socket: handlers,
+      socket: {
+        data(_s: Socket<undefined>, data: Buffer) {
+          onData(data)
+        },
+        error(_s: Socket<undefined>, error: Error) {
+          onError(error)
+        },
+        close: onClose,
+        handshake(_s: Socket<undefined>, success: boolean, error: Error | null) {
+          if (!success) failure = error ?? new Error("TLS handshake failed")
+          handshakeDone()
+        },
+        open() {},
+        drain() {},
+      },
     })[1] as unknown as Socket<undefined>
+
+    // Wait for the handshake before writing. A command sent into a socket that
+    // is still negotiating is lost, and the reply that never comes then reads
+    // as a connection timeout — a minute of silence with nothing to explain it.
+    await Promise.race([
+      handshaken,
+      Bun.sleep(timeoutMs).then(() => {
+        throw new Error(`TLS handshake timed out after ${timeoutMs}ms`)
+      }),
+    ])
+    if (failure) throw failure
+
     // The session resets after the upgrade, so EHLO again.
     await ehlo()
   }
