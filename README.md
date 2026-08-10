@@ -60,6 +60,11 @@ fires `email.received`.
 **Accounts** — the first account on an instance is its owner; later signups get
 their own team. Sessions are cookie-based and revocable.
 
+**Integrations** — pair with [Inkling](https://github.com/wess/inkling) in one paste each
+direction: the CMS gets outbound email and broadcast-on-publish, and Outbox can build a
+broadcast straight from a published entry. See
+[Connect Inkling](https://wess.github.io/outbox/tutorials/connect-inkling).
+
 **Also** — API keys with full or send-only scope and optional domain restriction,
 cursor pagination, per-team rate limiting, a full API request log, and metrics
 with configurable granularity and dimensions.
@@ -168,6 +173,17 @@ Everything is environment variables — see `.env.example`.
 | `RATE_LIMIT_PER_SECOND` | `10` | Per team, matching Resend's default. |
 | `MAX_ATTACHMENT_BYTES` | `41943040` | 40MB. |
 | `TRUSTED_PROXIES` | — | Set when behind a load balancer so client IPs are real. |
+
+### Connecting another service
+
+```sh
+bun run bin/outbox.ts connect            # prints a token to paste elsewhere
+bun run bin/outbox.ts connect --send-only # a key that can only send
+bun run bin/outbox.ts connect inkling <token>   # pair with an Inkling install
+```
+
+A connection token carries the URL and the API key in one string, so pairing is one paste
+rather than two fields to get subtly wrong.
 
 ---
 

@@ -16,6 +16,7 @@ import {
 import { dashboardRoutes } from "./routes/dashboard/index.ts"
 import { domainRoutes } from "./routes/domains/index.ts"
 import { emailRoutes } from "./routes/emails/index.ts"
+import { integrationRoutes } from "./routes/integrations/index.ts"
 import { segmentRoutes, suppressionRoutes } from "./routes/segments/index.ts"
 import { templateRoutes } from "./routes/templates/index.ts"
 import { trackingRoutes } from "./routes/tracking/index.ts"
@@ -39,6 +40,7 @@ export const apiRoutes = (): Route[] => [
   ...wrapAll(templateRoutes),
   ...wrapAll(webhookRoutes),
   ...wrapAll(logRoutes),
+  ...wrapAll(integrationRoutes),
   ...wrapAll(automationRoutes),
   ...wrapAll(eventRoutes),
   ...wrapAll(contactRoutes),

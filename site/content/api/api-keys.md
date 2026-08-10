@@ -30,7 +30,7 @@ curl -X POST https://outbox.example.com/api-keys \
 ```json
 {
   "id": "dacf4072-4119-4d88-932f-6202748ac7c8",
-  "token": "ob_5nMDLKgQ4RiPqXvBc7wZaTuEjy2FhN8s"
+  "token": "ob_EXAMPLEKEYdonotusethisvalue456"
 }
 ```
 

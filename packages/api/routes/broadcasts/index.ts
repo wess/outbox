@@ -2,10 +2,14 @@ import {
   broadcastListItem,
   broadcastObject,
   enqueue,
+  entryToHtml,
+  entryToText,
+  inklingFor,
   invalidParameter,
   notFound,
   paginate,
   parsePageQuery,
+  requireIntegration,
 } from "@outbox/core"
 import { allColumns, db } from "@outbox/core/db"
 import { normalizeSchedule, parseScheduledAt } from "@outbox/core/scheduling"
@@ -47,7 +51,7 @@ export const broadcastRoutes: Route[] = [
         segment_id: z.string().uuid().optional(),
         audience_id: z.string().uuid().optional(),
         from: z.string().min(1),
-        subject: z.string().min(1),
+        subject: z.string().min(1).optional(),
         reply_to: z.union([z.string(), z.array(z.string())]).optional(),
         html: z.string().optional(),
         text: z.string().optional(),
@@ -56,6 +60,14 @@ export const broadcastRoutes: Route[] = [
         topic_id: z.string().uuid().optional(),
         send: z.boolean().optional(),
         scheduled_at: z.string().optional(),
+        // Pull the body from a connected CMS instead of supplying it inline.
+        source: z
+          .object({
+            provider: z.literal("inkling"),
+            type: z.string().min(1),
+            slug: z.string().min(1),
+          })
+          .optional(),
       }),
       before: authedFull,
       assigns: {} as never,
@@ -64,9 +76,36 @@ export const broadcastRoutes: Route[] = [
       const teamId = authOf(c).teamId
       const segmentId = c.body.segment_id ?? c.body.audience_id
       if (!segmentId) throw invalidParameter("Missing `segment_id` field.")
-      if (!c.body.html && !c.body.text) {
-        throw invalidParameter("Missing one of `html` or `text`.")
+
+      // A source fills in subject, html, and text; anything passed explicitly
+      // still wins, so you can override just the subject.
+      let sourced: { subject?: string; html?: string; text?: string } = {}
+      if (c.body.source) {
+        const integration = await requireIntegration(teamId, "inkling")
+        const client = await inklingFor(teamId)
+        const entry = await client.entry(c.body.source.type, c.body.source.slug)
+        const settings = (integration.settings ?? {}) as {
+          site_url?: string
+          path_template?: string
+        }
+        sourced = {
+          subject: entry.title,
+          html: entryToHtml(entry, c.body.source.type, {
+            siteUrl: settings.site_url ?? null,
+            pathTemplate: settings.path_template,
+            footerHtml: '<a href="{{{OUTBOX_UNSUBSCRIBE_URL}}}">Unsubscribe</a>',
+          }),
+          text: entryToText(entry, c.body.source.type, { siteUrl: settings.site_url ?? null }),
+        }
       }
+
+      const html = c.body.html ?? sourced.html ?? null
+      const text = c.body.text ?? sourced.text ?? null
+      const subject = c.body.subject ?? sourced.subject
+      if (!html && !text) {
+        throw invalidParameter("Missing one of `html`, `text`, or `source`.")
+      }
+      if (!subject) throw invalidParameter("Missing `subject` field.")
 
       const scheduledAt = normalizeSchedule(parseScheduledAt(c.body.scheduled_at))
       const willSend = c.body.send === true || Boolean(scheduledAt)
@@ -77,13 +116,13 @@ export const broadcastRoutes: Route[] = [
             team_id: teamId,
             segment_id: segmentId,
             topic_id: c.body.topic_id ?? null,
-            name: c.body.name ?? c.body.subject,
+            name: c.body.name ?? subject,
             from_address: c.body.from,
-            subject: c.body.subject,
+            subject,
             preview_text: c.body.preview_text ?? null,
             reply_to: toArray(c.body.reply_to),
-            html: c.body.html ?? null,
-            text: c.body.text ?? null,
+            html,
+            text,
             status: willSend ? (scheduledAt ? "scheduled" : "sending") : "draft",
             scheduled_at: scheduledAt,
           })

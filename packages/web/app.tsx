@@ -9,6 +9,7 @@ import { AutomationsPage } from "./pages/automations.tsx"
 import { BroadcastsPage } from "./pages/broadcasts.tsx"
 import { DomainsPage } from "./pages/domains.tsx"
 import { EmailsPage } from "./pages/emails.tsx"
+import { IntegrationsPage } from "./pages/integrations.tsx"
 import { LogsPage } from "./pages/logs.tsx"
 import { MetricsPage } from "./pages/metrics.tsx"
 import { SettingsPage } from "./pages/settings.tsx"
@@ -59,6 +60,7 @@ const NAV = [
   { label: "Logs", path: "/logs", icon: icons.logs },
   { label: "API keys", path: "/api-keys", icon: icons.key },
   { label: "Webhooks", path: "/webhooks", icon: icons.webhook },
+  { label: "Integrations", path: "/integrations", icon: icons.link },
   { label: "Settings", path: "/settings", icon: icons.settings },
 ] as const
 
@@ -86,6 +88,7 @@ const Shell = ({ me, onSignOut }: { me: Me; onSignOut: () => void }) => {
     if (route.startsWith("/logs")) return <LogsPage route={route} />
     if (route.startsWith("/api-keys")) return <ApiKeysPage />
     if (route.startsWith("/webhooks")) return <WebhooksPage route={route} />
+    if (route.startsWith("/integrations")) return <IntegrationsPage />
     if (route.startsWith("/settings")) return <SettingsPage me={me} onSignOut={onSignOut} />
     return <EmailsPage />
   }

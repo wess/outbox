@@ -52,7 +52,7 @@ again:
   owner     yes — this is the instance owner
   user      admin@outbox.local
   password  outbox-dev-password
-  api key   ob_XeItJfsXukUHWxbCOzO9rJiUNKNhP9XF
+  api key   ob_EXAMPLEKEYdonotusethisvalue123
 ```
 
 > The first account created on an instance owns it. That is whoever `seed` creates, or

@@ -4,6 +4,7 @@ export * from "./automations/index.ts"
 export * from "./broadcasts/index.ts"
 export * from "./domains/index.ts"
 export * from "./emails/index.ts"
+export * from "./integrations/index.ts"
 export * from "./ops/index.ts"
 export * from "./templates/index.ts"
 export * from "./webhooks/index.ts"
@@ -14,6 +15,7 @@ import * as automations from "./automations/index.ts"
 import * as broadcasts from "./broadcasts/index.ts"
 import * as domains from "./domains/index.ts"
 import * as emails from "./emails/index.ts"
+import * as integrationsSchema from "./integrations/index.ts"
 import * as ops from "./ops/index.ts"
 import * as templates from "./templates/index.ts"
 import * as webhooks from "./webhooks/index.ts"
@@ -29,6 +31,7 @@ export const allSchemas = [
   broadcasts,
   domains,
   emails,
+  integrationsSchema,
   ops,
   templates,
   webhooks,
