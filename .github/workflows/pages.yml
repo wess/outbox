@@ -39,8 +39,17 @@ jobs:
 
       - name: Build site
         env:
-          SITE_URL: ${{ steps.pages.outputs.origin }}${{ steps.pages.outputs.base_path }}
-        run: bun run site/build.ts --base "${{ steps.pages.outputs.base_path }}"
+          PAGES_ORIGIN: ${{ steps.pages.outputs.origin }}
+          PAGES_BASE: ${{ steps.pages.outputs.base_path }}
+        run: |
+          # GitHub reports an http:// origin when it did not issue the
+          # certificate itself — which is what happens with a custom domain that
+          # terminates TLS at a proxy. The site is served over https either way,
+          # so canonical and llms.txt URLs have to say https or they point at a
+          # redirect.
+          export SITE_URL="${PAGES_ORIGIN/#http:/https:}${PAGES_BASE}"
+          echo "building for $SITE_URL"
+          bun run site/build.ts --base "$PAGES_BASE"
 
       - uses: actions/upload-pages-artifact@v3
         with:

@@ -24,7 +24,8 @@ const arg = (name: string): string | undefined => {
 
 // GitHub Pages serves project sites under /<repo>, so every link needs the prefix.
 const BASE = (arg("--base") ?? process.env.SITE_BASE ?? "").replace(/\/$/, "")
-const SITE_URL = process.env.SITE_URL ?? "https://wess.github.io/outbox"
+// A trailing slash would double up against every page path below.
+const SITE_URL = (process.env.SITE_URL ?? "https://wess.github.io/outbox").replace(/\/$/, "")
 
 // ------------------------------------------------------------- front matter --
 
