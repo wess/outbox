@@ -762,3 +762,21 @@ tbody tr.clickable:hover {
     grid-template-columns: 1fr;
   }
 }
+
+/* A button that reads as a link — used for "Forgot your password?" and the way
+   back from it. A real <button> rather than an <a href="#">, so it is reachable
+   by keyboard and announces itself correctly. */
+.link-button {
+  background: none;
+  border: 0;
+  padding: 0;
+  color: var(--text-muted);
+  font: inherit;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.link-button:hover {
+  color: var(--text);
+}

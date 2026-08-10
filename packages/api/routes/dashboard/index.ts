@@ -1,11 +1,13 @@
 import { config } from "@outbox/config"
 import {
+  consumePasswordReset,
   invalidParameter,
   issueSession,
   listEnvelope,
   normalizeEmail,
   notFound,
   pgTimestamp,
+  requestPasswordReset,
   resolveSession,
   revokeSession,
   SESSION_COOKIE,
@@ -147,6 +149,38 @@ export const dashboardRoutes: Route[] = [
         userAgent: c.headers.get("user-agent"),
       })
       return withCookie(json(c, 200, userObject(user, team)), session.token, SESSION_TTL_SECONDS)
+    },
+  ),
+
+  postR("/auth/forgot-password", { body: z.object({ email: z.string().email() }) }, async (c) => {
+    // Always the same answer, whatever happened. Anything else turns this
+    // into an account-enumeration oracle on an endpoint that needs no
+    // credentials — "no account with that address" is exactly the fact an
+    // attacker came here to learn. The operator gets the detail in the log.
+    const outcome = await requestPasswordReset({
+      email: c.body.email,
+      ip: ipOf(c as Conn),
+    })
+    if (!outcome.sent) console.log(`[outbox] password reset not sent — ${outcome.reason}`)
+
+    return json(c, 202, {
+      object: "password_reset",
+      message: "If an account exists for that address, a reset link is on its way.",
+    })
+  }),
+
+  postR(
+    "/auth/reset-password",
+    { body: z.object({ token: z.string().min(1), password: z.string().min(8) }) },
+    async (c) => {
+      await consumePasswordReset(c.body.token, c.body.password)
+      // Deliberately no session: every session for the account was just
+      // revoked, and signing the caller straight in would mean a leaked link
+      // grants access without ever proving they can read the mailbox again.
+      return json(c, 200, {
+        object: "password_reset",
+        message: "Password updated. You can sign in now.",
+      })
     },
   ),
 

@@ -95,6 +95,7 @@ trade for most deployments.
 | `STORAGE_ACCESS_KEY_ID` | — | |
 | `STORAGE_SECRET_ACCESS_KEY` | — | |
 | `STORAGE_PREFIX` | `outbox` | Key prefix, so one bucket can hold other things |
+| `AUTH_FROM` | — | Address password-reset mail comes from. See below |
 
 `TRUSTED_PROXIES` matters more than it looks. Outbox only honours `X-Forwarded-For` when
 the request genuinely arrived from a listed proxy; otherwise the header is
@@ -164,6 +165,45 @@ addresses on that domain is parsed, stored with its attachments, and raises
 `email.received`.
 
 See [Receive inbound email](/tutorials/receive-inbound-email).
+
+## Password reset
+
+The dashboard has a "Forgot your password?" flow. It sends the reset link
+**through this instance** — Outbox is an email service, so it delivers its own
+transactional mail rather than asking you to configure a second one.
+
+That has one consequence worth knowing before you need it:
+
+> **A brand new instance cannot send reset mail.** Until a domain is verified,
+> there is no address to send from, so the request is accepted, logged, and
+> nothing arrives. This is not a bug you can configure away — the first account
+> exists before any domain does.
+
+So: verify a domain early, and keep the owner password somewhere you can find it
+until you have. The log line to look for is
+
+```
+[outbox] password reset not sent — no verified sending domain and AUTH_FROM is unset
+```
+
+By default reset mail comes from `no-reply@<first verified domain>`. Set
+`AUTH_FROM` to override that.
+
+Two things the flow deliberately does:
+
+- **It answers identically whether or not the address has an account.** An
+  endpoint that needs no credentials and confirms which addresses are registered
+  is an account-enumeration oracle; the detail goes to the log instead.
+- **A successful reset signs out every existing session.** If the reset happened
+  because somebody else knew the password, leaving their session alive would
+  defeat the point.
+
+Tokens are single-use, expire in an hour, and only their hash is stored — a
+database backup cannot be turned into working reset links.
+
+Reset mail goes through the ordinary send pipeline, which means **a suppressed
+address will not receive it**. Correct in general, maddening if it is yours:
+check `/suppressions` if a reset never arrives.
 
 ## Object storage
 

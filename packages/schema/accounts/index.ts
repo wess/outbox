@@ -61,6 +61,22 @@ export const sessions = defineSchema("sessions", {
   revoked_at: column.timestamp().nullable(),
 })
 
+/**
+ * Password reset tokens.
+ *
+ * The token itself is never stored — only its SHA-256 hash, the same way API
+ * keys and sessions are held. A leaked database backup should not hand out
+ * working reset links.
+ */
+export const passwordResets = defineSchema("password_resets", {
+  token_hash: column.text().primaryKey(),
+  user_id: column.uuid().ref("users", "id"),
+  ip: column.text().nullable(),
+  expires_at: column.timestamp(),
+  used_at: column.timestamp().nullable(),
+  created_at: now(),
+})
+
 // permission: full_access | sending_access
 export const apiKeys = defineSchema("api_keys", {
   id: id(),

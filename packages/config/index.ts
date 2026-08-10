@@ -43,6 +43,10 @@ export const config = defineConfig({
     prefix: env("STORAGE_PREFIX", { default: "outbox" }),
   },
 
+  // Address password-reset mail is sent from. Empty means "the first verified
+  // sending domain", which is the only address a fresh instance can deliver as.
+  authFrom: env("AUTH_FROM", { default: "" }),
+
   rateLimitPerSecond: env("RATE_LIMIT_PER_SECOND", { parse: Number, default: "10" }),
   maxAttachmentBytes: env("MAX_ATTACHMENT_BYTES", { parse: Number, default: "41943040" }),
   trustedProxies: env("TRUSTED_PROXIES", { default: "" }),
