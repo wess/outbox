@@ -74,7 +74,10 @@ export const emailAttachments = defineSchema("email_attachments", {
   content_type: column.text().default("application/octet-stream"),
   content_id: column.text().nullable(),
   size: column.integer().default(0),
+  // Exactly one of these carries the bytes: a key when a bucket is configured,
+  // inline base64 when it is not.
   content: column.text().nullable(),
+  storage_key: column.text().nullable(),
   created_at: now(),
 })
 
@@ -98,6 +101,7 @@ export const receivedEmails = defineSchema("received_emails", {
   dmarc: column.text().nullable(),
   spam_score: column.real().nullable(),
   raw: column.text().nullable(),
+  raw_storage_key: column.text().nullable(),
   size_bytes: column.integer().default(0),
   created_at: now(),
 })
@@ -111,6 +115,7 @@ export const receivedEmailAttachments = defineSchema("received_email_attachments
   content_id: column.text().nullable(),
   size: column.integer().default(0),
   content: column.text().nullable(),
+  storage_key: column.text().nullable(),
   created_at: now(),
 })
 

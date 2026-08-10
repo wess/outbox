@@ -1,6 +1,7 @@
 import { config } from "@outbox/config"
 import { dispatch, domainOf, normalizeEmail, recordBounce } from "@outbox/core"
 import { allColumns, db } from "@outbox/core/db"
+import { storeBlob, storeText } from "@outbox/core/storage"
 import {
   type Domain,
   domains,
@@ -53,6 +54,27 @@ export const storeReceived = async (input: {
   const parsed = parseMessage(input.raw)
   const conn = db()
 
+  // Uploaded before the row is written, as on the sending side. Inbound differs
+  // in one way that matters: the message has already been accepted over SMTP, so
+  // a storage failure here loses mail rather than rejecting it. Fall back to
+  // inline instead — a large row beats a dropped message.
+  const rawBlob = await storeText("inbound", input.teamId, "message.eml", input.raw).catch(
+    (error) => {
+      console.warn("[outbox] storing raw message failed, keeping it inline:", error.message)
+      return { storageKey: null, text: input.raw }
+    },
+  )
+  const storedAttachments = await Promise.all(
+    parsed.attachments.map((a) =>
+      storeBlob("inbound-attachments", input.teamId, a.filename, a.content, a.contentType).catch(
+        (error) => {
+          console.warn("[outbox] storing attachment failed, keeping it inline:", error.message)
+          return { storageKey: null, content: a.content.toString("base64") }
+        },
+      ),
+    ),
+  )
+
   const row = (await conn.one<ReceivedEmail>(
     from(receivedEmails)
       .insert({
@@ -69,7 +91,8 @@ export const storeReceived = async (input: {
         html: parsed.html,
         text: parsed.text,
         headers: parsed.headers,
-        raw: input.raw,
+        raw: rawBlob.text,
+        raw_storage_key: rawBlob.storageKey,
         size_bytes: Buffer.byteLength(input.raw),
       })
       .returning(...allColumns(receivedEmails)),
@@ -78,14 +101,15 @@ export const storeReceived = async (input: {
   if (parsed.attachments.length) {
     await conn.execute(
       from(receivedEmailAttachments).insertMany(
-        parsed.attachments.map((a) => ({
+        parsed.attachments.map((a, i) => ({
           received_email_id: row.id,
           team_id: input.teamId,
           filename: a.filename,
           content_type: a.contentType,
           content_id: a.contentId,
           size: a.content.byteLength,
-          content: a.content.toString("base64"),
+          content: storedAttachments[i]!.content,
+          storage_key: storedAttachments[i]!.storageKey,
         })),
       ),
     )

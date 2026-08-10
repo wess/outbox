@@ -89,6 +89,12 @@ trade for most deployments.
 | `RATE_LIMIT_PER_SECOND` | `10` | Per team, matching Resend's default |
 | `MAX_ATTACHMENT_BYTES` | `41943040` | 40MB |
 | `TRUSTED_PROXIES` | — | Set behind a load balancer so client IPs are real |
+| `STORAGE_BUCKET` | — | Set to move attachments out of Postgres. See below |
+| `STORAGE_REGION` | `us-east-1` | |
+| `STORAGE_ENDPOINT` | — | Leave empty for AWS; set it for Spaces, R2, MinIO |
+| `STORAGE_ACCESS_KEY_ID` | — | |
+| `STORAGE_SECRET_ACCESS_KEY` | — | |
+| `STORAGE_PREFIX` | `outbox` | Key prefix, so one bucket can hold other things |
 
 `TRUSTED_PROXIES` matters more than it looks. Outbox only honours `X-Forwarded-For` when
 the request genuinely arrived from a listed proxy; otherwise the header is
@@ -159,17 +165,56 @@ addresses on that domain is parsed, stored with its attachments, and raises
 
 See [Receive inbound email](/tutorials/receive-inbound-email).
 
+## Object storage
+
+By default everything lives in Postgres, attachments included. That is the right
+default — one thing to run, one thing to back up — but attachments are unlike
+everything else Outbox stores. A single 40MB attachment is larger than most teams'
+entire `emails` table, and base64 in a `text` column costs a third again on top.
+Send enough of them and the blobs dominate the database, every `pg_dump` carries
+them, and the disk fills long before the row count gets interesting.
+
+Point Outbox at a bucket and they go there instead, with Postgres keeping a key:
+
+```sh
+STORAGE_BUCKET=my-bucket
+STORAGE_REGION=nyc3
+STORAGE_ENDPOINT=https://nyc3.digitaloceanspaces.com   # empty for AWS S3
+STORAGE_ACCESS_KEY_ID=...
+STORAGE_SECRET_ACCESS_KEY=...
+```
+
+Any S3-compatible endpoint works — AWS, DigitalOcean Spaces, Cloudflare R2, MinIO,
+Backblaze B2. Give the key **read and write on that one bucket**, not full access.
+
+What moves: attachments on sent mail, attachments on received mail, and the raw
+MIME of received messages. Keys are namespaced `<prefix>/<kind>/<team id>/<uuid>/
+<filename>`, so one bucket serves every team and a team's objects can be found
+without consulting the database.
+
+Three things worth knowing:
+
+- **It is not a cutover.** Rows written before you configured a bucket keep their
+  inline content and stay readable. Nothing backfills them and nothing needs to —
+  the read path takes whichever column is populated.
+- **Turning it off strands anything already uploaded.** The objects survive, but an
+  attachment with a key and no bucket configured is an error rather than an empty
+  file, because silently sending a zero-byte attachment is worse than failing.
+- **The bucket becomes part of your backup.** `pg_dump` alone is no longer a
+  complete backup once blobs live elsewhere.
+
 ## Backups
 
-Everything lives in Postgres — including message bodies, attachments (base64 in
-`email_attachments`), and DKIM private keys. A standard `pg_dump` is a complete backup.
+Everything lives in Postgres — message bodies, DKIM private keys, and attachments
+too unless you configured object storage above. A standard `pg_dump` is a complete
+backup of the database.
 
 Two things deserve attention:
 
 - **DKIM private keys** are in `domains.dkim_private_key`. Losing them means republishing
   DNS for every domain. Treat the dump as a secret.
-- **Attachments make the database large.** If you send many or large attachments, plan
-  storage and retention accordingly.
+- **Attachments make the database large** when they are stored inline. If you send many
+  or large attachments, either configure a bucket or plan retention accordingly.
 
 ## Housekeeping
 

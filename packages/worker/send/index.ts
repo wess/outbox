@@ -7,6 +7,7 @@ import {
   emit,
   injectUnsubscribe,
   isSuppressed,
+  loadBlob,
   type MimeAttachment,
   normalizeEmail,
   parseAddress,
@@ -52,12 +53,19 @@ const attachmentsFor = async (emailId: string): Promise<MimeAttachment[]> => {
   const rows = await db().all<EmailAttachment>(
     from(emailAttachments).where((q) => q("email_id").equals(emailId)),
   )
-  return rows.map((a) => ({
-    filename: a.filename,
-    content: Buffer.from(a.content ?? "", "base64"),
-    contentType: a.content_type,
-    contentId: a.content_id,
-  }))
+  // Sequential rather than parallel: a message with many attachments would
+  // otherwise open that many bucket connections at once, on every send, on
+  // every worker. Attachments are rare and the queue is already concurrent.
+  const out: MimeAttachment[] = []
+  for (const a of rows) {
+    out.push({
+      filename: a.filename,
+      content: await loadBlob(a),
+      contentType: a.content_type,
+      contentId: a.content_id,
+    })
+  }
+  return out
 }
 
 export type SendOutcome = { status: "sent" | "skipped" | "failed"; detail: string }

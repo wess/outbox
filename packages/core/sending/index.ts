@@ -29,6 +29,7 @@ import { emit } from "../events/index.ts"
 import { rfcMessageId } from "../ids/index.ts"
 import { enqueue } from "../queue/index.ts"
 import { normalizeSchedule, parseScheduledAt } from "../scheduling/index.ts"
+import { storeBlob } from "../storage/index.ts"
 import { render } from "../template/index.ts"
 
 export type AttachmentInput = {
@@ -373,6 +374,13 @@ export const createEmail = async (input: SendInput, ctx: SendContext): Promise<E
     )
   }
 
+  // Upload before the first insert. A bucket that is unreachable then fails the
+  // send outright, rather than committing an email whose attachments cannot be
+  // read back when the worker comes to deliver it.
+  const stored = await Promise.all(
+    prepared.map((a) => storeBlob("attachments", ctx.teamId, a.filename, a.content, a.contentType)),
+  )
+
   const messageIdValue = rfcMessageId(domain?.name ?? config.hostname)
   const size = Buffer.byteLength(html ?? "") + Buffer.byteLength(text ?? "") + attachmentBytes
 
@@ -427,14 +435,15 @@ export const createEmail = async (input: SendInput, ctx: SendContext): Promise<E
   if (prepared.length) {
     await conn.execute(
       from(emailAttachments).insertMany(
-        prepared.map((a) => ({
+        prepared.map((a, i) => ({
           email_id: email.id,
           team_id: ctx.teamId,
           filename: a.filename,
           content_type: a.contentType,
           content_id: a.contentId,
           size: a.content.byteLength,
-          content: a.content.toString("base64"),
+          content: stored[i]!.content,
+          storage_key: stored[i]!.storageKey,
         })),
       ),
     )

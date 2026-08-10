@@ -6,6 +6,8 @@ import {
   emit,
   invalidParameter,
   listEnvelope,
+  loadBlob,
+  loadText,
   notFound,
   paginate,
   parsePageQuery,
@@ -145,6 +147,8 @@ export const emailRoutes: Route[] = [
         ]),
       )
       if (!row) throw notFound("Attachment not found")
+      // Always base64 in the response, whichever way the bytes were stored —
+      // where a blob lives is an operator's concern, not the API's.
       return json(c, 200, {
         object: "attachment",
         id: row.id,
@@ -152,7 +156,7 @@ export const emailRoutes: Route[] = [
         content_type: row.content_type,
         content_id: row.content_id,
         size: row.size,
-        content: row.content,
+        content: (await loadBlob(row)).toString("base64"),
         created_at: pgTimestamp(row.created_at),
       })
     },
@@ -170,6 +174,36 @@ export const emailRoutes: Route[] = [
       )
       if (!row) throw notFound("Received email not found")
       return json(c, 200, receivedEmailObject(row))
+    },
+  ),
+
+  // The archived message exactly as it arrived. Worth having as its own route
+  // rather than a field on the object above: it is the one thing that settles an
+  // argument about what a sender actually transmitted, and it is far too big to
+  // return on every read of an inbox listing.
+  getR(
+    "/emails/receiving/:id/raw",
+    { params: idParam, before: authedFull, assigns: {} as never },
+    async (c) => {
+      const row = await db().one<ReceivedEmail>(
+        from(receivedEmails).where((q) => [
+          q("id").equals(c.params.id),
+          q("team_id").equals(authOf(c).teamId),
+        ]),
+      )
+      if (!row) throw notFound("Received email not found")
+      const raw = await loadText(row)
+      if (raw === null) throw notFound("Raw message is not available for this email")
+      return {
+        ...c,
+        status: 200,
+        body: raw,
+        respHeaders: new Headers([
+          ...c.respHeaders,
+          ["content-type", "message/rfc822"],
+          ["content-disposition", `attachment; filename="${row.id}.eml"`],
+        ]),
+      }
     },
   ),
 
@@ -298,6 +332,8 @@ export const emailRoutes: Route[] = [
         ]),
       )
       if (!row) throw notFound("Attachment not found")
+      // Always base64 in the response, whichever way the bytes were stored —
+      // where a blob lives is an operator's concern, not the API's.
       return json(c, 200, {
         object: "attachment",
         id: row.id,
@@ -305,7 +341,7 @@ export const emailRoutes: Route[] = [
         content_type: row.content_type,
         content_id: row.content_id,
         size: row.size,
-        content: row.content,
+        content: (await loadBlob(row)).toString("base64"),
         created_at: pgTimestamp(row.created_at),
       })
     },

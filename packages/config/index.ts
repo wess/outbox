@@ -31,6 +31,18 @@ export const config = defineConfig({
     pollMs: env("WORKER_POLL_MS", { parse: Number, default: "1000" }),
   },
 
+  // Attachments and stored raw MIME go here when a bucket is configured, and
+  // stay inline in Postgres when one is not. Any S3-compatible endpoint works;
+  // leave `endpoint` empty for AWS, where the region determines it.
+  storage: {
+    bucket: env("STORAGE_BUCKET", { default: "" }),
+    region: env("STORAGE_REGION", { default: "us-east-1" }),
+    endpoint: env("STORAGE_ENDPOINT", { default: "" }),
+    accessKeyId: env("STORAGE_ACCESS_KEY_ID", { default: "" }),
+    secretAccessKey: env("STORAGE_SECRET_ACCESS_KEY", { default: "" }),
+    prefix: env("STORAGE_PREFIX", { default: "outbox" }),
+  },
+
   rateLimitPerSecond: env("RATE_LIMIT_PER_SECOND", { parse: Number, default: "10" }),
   maxAttachmentBytes: env("MAX_ATTACHMENT_BYTES", { parse: Number, default: "41943040" }),
   trustedProxies: env("TRUSTED_PROXIES", { default: "" }),
