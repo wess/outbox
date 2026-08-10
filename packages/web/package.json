@@ -1,0 +1,15 @@
+{
+  "name": "@outbox/web",
+  "version": "0.1.0",
+  "type": "module",
+  "private": true,
+  "exports": {
+    ".": {
+      "import": "./index.html"
+    },
+    "./index.html": "./index.html"
+  },
+  "dependencies": {
+    "@outbox/config": "workspace:*"
+  }
+}

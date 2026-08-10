@@ -1,0 +1,33 @@
+{
+  "compilerOptions": {
+    "lib": ["ESNext", "DOM", "DOM.Iterable"],
+    "target": "ESNext",
+    "module": "Preserve",
+    "moduleDetection": "force",
+    "jsx": "react-jsx",
+    "allowJs": true,
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "verbatimModuleSyntax": true,
+    "noEmit": true,
+    "strict": true,
+    "skipLibCheck": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "types": ["bun"],
+    "paths": {
+      "@outbox/config": ["./packages/config/index.ts"],
+      "@outbox/schema": ["./packages/schema/index.ts"],
+      "@outbox/core": ["./packages/core/index.ts"],
+      "@outbox/core/*": ["./packages/core/*/index.ts"],
+      "@outbox/api": ["./packages/api/index.ts"],
+      "@outbox/delivery": ["./packages/delivery/index.ts"],
+      "@outbox/worker": ["./packages/worker/index.ts"],
+      "@outbox/inbound": ["./packages/inbound/index.ts"],
+      "@outbox/sdk": ["./packages/sdk/index.ts"],
+      "@outbox/web": ["./packages/web/index.tsx"]
+    }
+  },
+  "exclude": ["node_modules", "dist"]
+}

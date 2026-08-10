@@ -1,0 +1,17 @@
+{
+  "name": "@outbox/api",
+  "version": "0.1.0",
+  "type": "module",
+  "private": true,
+  "exports": {
+    ".": {
+      "import": "./index.ts"
+    }
+  },
+  "dependencies": {
+    "@outbox/config": "workspace:*",
+    "@outbox/core": "workspace:*",
+    "@outbox/schema": "workspace:*",
+    "@outbox/web": "workspace:*"
+  }
+}

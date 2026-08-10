@@ -1,0 +1,51 @@
+{
+  "name": "outbox",
+  "version": "0.1.0",
+  "description": "Open source email API and dashboard. A self-hostable Resend.",
+  "license": "MIT",
+  "type": "module",
+  "private": true,
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/wess/outbox.git"
+  },
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "bun run bin/outbox.ts dev",
+    "api": "bun run bin/outbox.ts api",
+    "worker": "bun run bin/outbox.ts worker",
+    "inbound": "bun run bin/outbox.ts inbound",
+    "web": "bun run --hot packages/web/dev.ts",
+    "migrate": "bun run bin/outbox.ts migrate up",
+    "migrate:status": "bun run bin/outbox.ts migrate status",
+    "migrate:down": "bun run bin/outbox.ts migrate down",
+    "migrate:diff": "bun run bin/outbox.ts migrate diff",
+    "seed": "bun run bin/outbox.ts seed",
+    "db:up": "docker compose -f docker/compose.yml up -d",
+    "db:down": "docker compose -f docker/compose.yml down",
+    "test": "bun test",
+    "check": "bunx biome check packages/ bin/",
+    "tidy": "bunx biome check --write packages/ bin/",
+    "typecheck": "bunx tsc --noEmit",
+    "test:smoke": "bun run packages/api/test/smoke.ts",
+    "test:e2e": "bun run packages/worker/test/e2e.ts",
+    "test:compat": "bun run packages/sdk/test/compat.ts"
+  },
+  "dependencies": {
+    "@wess/atlas": "github:wess/atlas",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "resend": "^6.18.1",
+    "zod": "^3.23.0"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.5.5",
+    "@types/bun": "^1.3.14",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "typescript": "^5.9.0",
+    "resend": "^6.18.0"
+  }
+}
