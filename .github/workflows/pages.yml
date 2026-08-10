@@ -36,6 +36,10 @@ jobs:
       - name: Configure Pages
         id: pages
         uses: actions/configure-pages@v5
+        with:
+          # Turns Pages on and points it at Actions, so a fresh clone or fork
+          # deploys without anyone visiting the settings screen first.
+          enablement: true
 
       - name: Build site
         env:

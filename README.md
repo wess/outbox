@@ -322,9 +322,9 @@ bun run docs:serve     # preview on :4321
 ```
 
 `.github/workflows/pages.yml` builds and deploys it on every push to `main` that touches
-`site/`. Set the repository's **Settings → Pages → Source** to **GitHub Actions** for
-that to run. If you would rather serve from a branch, `./site/publish.sh` pushes the
-build to `gh-pages` instead.
+`site/`. The workflow turns Pages on itself, so a fork deploys without anyone visiting
+the settings screen first. If you would rather serve from a branch, `./site/publish.sh`
+pushes the build to `gh-pages` instead.
 
 The site also emits [`llms.txt`](https://wess.github.io/outbox/llms.txt) and
 `llms-full.txt`, and serves every page's raw markdown at `<url>.md`, so an agent can read

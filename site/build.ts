@@ -177,7 +177,11 @@ const layout = (input: { page: Page; nav: NavGroup[]; css: string }): string => 
       </aside>`
     : ""
 
-  const canonical = `${SITE_URL}${page.url.replace(BASE, "")}`
+  // Pages serves these as directory indexes, so `/api/emails` 301s to
+  // `/api/emails/`. Naming the redirect target directly keeps canonical and
+  // sitemap pointing at a real URL rather than a hop.
+  const path = page.url.replace(BASE, "") || "/"
+  const canonical = `${SITE_URL}${path.endsWith("/") ? path : `${path}/`}`
 
   return `<!doctype html>
 <html lang="en">
@@ -364,7 +368,10 @@ const build = async () => {
   await writeFile(join(OUT, ".nojekyll"), "")
 
   const urls = pages
-    .map((p) => `  <url><loc>${SITE_URL}${p.url.replace(BASE, "") || "/"}</loc></url>`)
+    .map((p) => {
+      const path = p.url.replace(BASE, "") || "/"
+      return `  <url><loc>${SITE_URL}${path.endsWith("/") ? path : `${path}/`}</loc></url>`
+    })
     .join("\n")
   await writeFile(
     join(OUT, "sitemap.xml"),
